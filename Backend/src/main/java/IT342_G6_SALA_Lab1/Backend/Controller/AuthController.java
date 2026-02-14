@@ -6,10 +6,12 @@ import IT342_G6_SALA_Lab1.Backend.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+import java.util.Collections;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin
+@CrossOrigin(origins = "http://localhost:3000")
 public class AuthController {
 
     @Autowired
@@ -29,15 +31,15 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public String login(@RequestBody User user) {
-        User existingUser = userRepository
-                .findByEmail(user.getEmail())
+    public ResponseEntity<?> login(@RequestBody User user) {
+        User existingUser = userRepository.findByEmail(user.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (passwordEncoder.matches(user.getPassword(), existingUser.getPassword())) {
-            return jwtUtil.generateToken(existingUser.getEmail());
+            String token = jwtUtil.generateToken(existingUser.getEmail());
+            return ResponseEntity.ok(Collections.singletonMap("token", token));
         } else {
-            throw new RuntimeException("Invalid credentials");
+            return ResponseEntity.status(401).body("Invalid credentials");
         }
     }
 }
